@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .   # build from current directory using the Dockerfile here
+    ports:
+      - "8080:8080"  # map container port 3000 to host port 3000
+    volumes:
+      - .:/src       # mount local code directory to /app in container (for live reload)
+      - go-cache:/go/pkg/mod  # persist Go module cache for speed
+    command: gin --port 8080 --appPort 8081 run main.go  # override CMD if needed (optional)
+    env_file:
+      - .env
+
+volumes:
+  go-cache:
