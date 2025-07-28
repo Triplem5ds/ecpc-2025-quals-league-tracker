@@ -60,6 +60,23 @@ func registerLeagueRoutes(r *gin.Engine) {
 
 			c.JSON(200, resp)
 		})
+
+		leagueGroup.GET("/scoreboard/get/:id_league", func(c *gin.Context) {
+			idLeague := c.Param("id_league")
+			id, err := strconv.ParseInt(idLeague, 10, 64)
+			if err != nil {
+				c.JSON(400, gin.H{"error": "invalid league id"})
+				return
+			}
+			resp, err := league.GetScoreboard(c, id)
+
+			if err != nil {
+				c.JSON(500, gin.H{"erro": err.Error()})
+				return
+			}
+
+			c.JSON(200, resp)
+		})
 	}
 
 }
