@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
@@ -36,12 +37,29 @@ func registerLeagueRoutes(r *gin.Engine) {
 				c.JSON(400, gin.H{"error": err.Error()})
 				return
 			}
-			if err := league.Create(c.Request.Context(), input.LeagueName, input.URL); err != nil {
+			if err := league.Create(c.Request.Context(), input.LeagueName, input.Description, input.Scoring); err != nil {
 				c.JSON(500, gin.H{"error": err.Error()})
 				return
 			}
 			c.JSON(200, gin.H{"message": "success"})
 		}) // create a league
+
+		leagueGroup.GET("/get/:id_league", func(c *gin.Context) {
+			idLeague := c.Param("id_league")
+			id, err := strconv.ParseInt(idLeague, 10, 64)
+			if err != nil {
+				c.JSON(400, gin.H{"error": "invalid league id"})
+				return
+			}
+			resp, err := league.Get(c, id)
+
+			if err != nil {
+				c.JSON(500, gin.H{"erro": err.Error()})
+				return
+			}
+
+			c.JSON(200, resp)
+		})
 	}
 
 }
