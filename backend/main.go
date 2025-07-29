@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"ecpc-league/internal/league"
 	"ecpc-league/internal/messages"
+	"ecpc-league/internal/player"
+	"ecpc-league/internal/round"
 	"ecpc-league/middleware"
 	"fmt"
 	"log"
@@ -21,7 +23,6 @@ var ENV = os.Getenv("ENV")
 func registerLeagueRoutes(r *gin.Engine) {
 
 	leagueGroup := r.Group("/league")
-
 	{
 		leagueGroup.GET("/list", func(c *gin.Context) {
 			resp, err := league.List(c.Request.Context())
@@ -81,6 +82,79 @@ func registerLeagueRoutes(r *gin.Engine) {
 
 }
 
+func registerRoundRoutes(r *gin.Engine) {
+
+	roundGroup := r.Group("/round")
+
+	{
+		roundGroup.POST("/create", func(c *gin.Context) {
+			var input messages.CreateRoundRequest
+
+			if err := c.ShouldBindJSON(&input); err != nil {
+				c.JSON(400, gin.H{"error": err.Error()})
+				return
+			}
+			if err := round.Create(c.Request.Context(), input.IdLeague, input.RoundName, input.URL, input.Description, input.StartTime); err != nil {
+				c.JSON(500, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(200, gin.H{"message": "success"})
+		}) // create a round
+		roundGroup.POST("/get/:id_league_round", func(c *gin.Context) {
+			idLeagueRound := c.Param("id_league_round")
+			id, err := strconv.ParseInt(idLeagueRound, 10, 64)
+			if err != nil {
+				c.JSON(400, gin.H{"error": "invalid round id"})
+				return
+			}
+
+			resp, err := round.Get(c.Request.Context(), id)
+			if err != nil {
+				c.JSON(500, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(200, resp)
+		}) // get a round
+
+		roundGroup.POST("/update", func(c *gin.Context) {
+			var input messages.UpdateRoundRequest
+
+			if err := c.ShouldBindJSON(&input); err != nil {
+				c.JSON(400, gin.H{"error": err.Error()})
+				return
+			}
+			if err := round.Update(c.Request.Context(), input.IdLeagueRound, input.Scoring); err != nil {
+				c.JSON(500, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(200, gin.H{"message": "success"})
+		}) // update a round
+	}
+
+}
+
+func registerPlayerRouters(r *gin.Engine) {
+	playerGroup := r.Group("/player")
+
+	{
+		playerGroup.POST("/create", func(c *gin.Context) {
+			var input messages.CreatePlayerRequest
+
+			if err := c.ShouldBindJSON(&input); err != nil {
+				c.JSON(400, gin.H{"error": err.Error()})
+				return
+			}
+			if err := player.Create(c.Request.Context(), input.IdLeague, input.PlayerName); err != nil {
+				c.JSON(500, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(200, gin.H{"message": "success"})
+
+		}) // create a player
+	}
+
+}
+
 func getDB() (*sql.DB, error) {
 	fmt.Println("HERE COMES JOHNNY", os.Getenv("DATABASE_URL"))
 	db, err := sql.Open("pgx", os.Getenv("DATABASE_URL"))
@@ -111,6 +185,8 @@ func main() {
 	router := gin.Default()
 	router.Use(middleware.TransactionMiddleware(db))
 	registerLeagueRoutes(router)
+	registerRoundRoutes(router)
+	registerPlayerRouters(router)
 
 	// Get port from environment variable, default to 8080
 	port := os.Getenv("PORT")

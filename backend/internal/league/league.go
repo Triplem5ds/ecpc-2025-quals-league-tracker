@@ -147,8 +147,8 @@ func Get(ctx context.Context, idLeague int64) (messages.GetLeagueResponse, error
 }
 
 func getLeagueScoreboard(players []messages.LeaguePlayers, scoring []messages.LeagueScoring, results []messages.LeagueRoundsResults) []messages.LeagueScoreboard {
-	var playersScores map[int]messages.LeagueScoreboard
-	var scoringMap map[int]int
+	playersScores := make(map[int]messages.LeagueScoreboard, 0)
+	scoringMap := make(map[int]int, 0)
 
 	for _, player := range players {
 		playersScores[player.IdLeaguePlayer] = messages.LeagueScoreboard{
